@@ -1,26 +1,111 @@
-{
-  "name": "securecode",
-  "version": "2.0.0",
-  "description": "SECURECODE — Encrypted Messaging App",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "express-session": "^1.17.3",
-    "bcrypt": "^5.1.1",
-    "connect-sqlite3": "^0.9.13",
-    "better-sqlite3": "^9.4.3",
-    "uuid": "^9.0.0",
-    "helmet": "^7.1.0",
-    "cors": "^2.8.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.3"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
-}
+# SECURECODE v2.0
+
+**Zero-Knowledge · End-to-End · Self-Destruct**
+
+A secure anonymous messaging app. Write a message, get a one-time code. Share the code. Recipient redeems it — the message self-destructs.
+
+---
+
+## Features
+
+- **Anonymous accounts** — random ID + 6-digit PIN, no email required
+- **Persistent login** — server-side sessions survive browser restarts (30 days)
+- **One-time codes** — `XXXX-XXXX` format, expire in 24h, destroyed on first read
+- **Real backend** — Node.js + Express + SQLite (no external DB needed)
+- **Code redemption without login** — recipients don't need an account
+- **Mobile-first** — works great on phone browsers
+
+---
+
+## Tech Stack
+
+| Layer | Tech |
+|---|---|
+| Backend | Node.js + Express |
+| Database | SQLite via `better-sqlite3` |
+| Sessions | `express-session` + `connect-sqlite3` |
+| Auth | bcrypt PIN hashing |
+| Frontend | Vanilla JS + SVG animations |
+
+---
+
+## Quick Start (Local)
+
+```bash
+# 1. Clone / download the repo
+git clone https://github.com/YOUR_USERNAME/securecode.git
+cd securecode
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment
+cp .env.example .env
+# Edit .env — change SESSION_SECRET to something random
+
+# 4. Run
+npm start
+# → http://localhost:3000
+```
+
+---
+
+## Deploy to GitHub + Railway / Render / Fly.io
+
+### Step 1 — Push to GitHub
+
+```bash
+git init
+git add .
+git commit -m "SECURECODE v2.0"
+git remote add origin https://github.com/YOUR_USERNAME/securecode.git
+git push -u origin main
+```
+
+### Step 2 — Deploy on Railway (free tier)
+
+1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
+2. Select your `securecode` repo
+3. Add environment variables:
+   - `SESSION_SECRET` = (generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`)
+   - `NODE_ENV` = `production`
+4. Railway auto-detects Node.js and runs `npm start`
+
+### Step 3 — Done!
+
+Your app is live. Share the URL. Recipients can redeem codes without creating an account.
+
+---
+
+## How Code Redemption Works
+
+1. **You** log in → Compose → type a message → click **GENERATE CODE**
+2. You get a code like `AB3K-7XWQ` — copy and send it to someone
+3. **They** go to your app URL → click **Redeem** → enter the code
+4. The message appears, starts a 30-minute countdown, then self-destructs
+
+Recipients do **not** need an account. The redeem endpoint is public.
+
+---
+
+## API Reference
+
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /api/session` | None | Check if logged in |
+| `POST /api/signup` | None | Create account (`{id, pin}`) |
+| `POST /api/login` | None | Sign in (`{id, pin}`) |
+| `POST /api/logout` | None | Clear session |
+| `POST /api/create-message` | Session | Encrypt + store message, get code |
+| `POST /api/redeem` | None | Redeem code, get message text |
+
+---
+
+## Security Notes
+
+- PINs are bcrypt-hashed (cost 10)
+- Sessions stored server-side in SQLite
+- Codes are 8-char alphanumeric (no ambiguous chars)
+- Messages expire after 24h even if not redeemed
+- Each code can only be redeemed once
+- No email, no phone, no tracking
